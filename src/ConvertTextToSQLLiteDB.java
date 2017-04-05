@@ -16,7 +16,7 @@ public class ConvertTextToSQLLiteDB {
 	private static String mFileName="";
 	/**
 	 *
-	 * @author sqlitetutorial.net
+	 * @author Gershon Lehrer
 	 */
 	
 	    /**
