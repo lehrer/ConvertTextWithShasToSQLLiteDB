@@ -79,8 +79,22 @@ public class ConvertTextToSQLLiteDB {
 			System.out.println(e.getMessage());
 		}
 	}
+	
+	public static void runQuery(String query){
+		try (Connection conn = DriverManager.getConnection(mUrl);
 
-	public static ResultSet runQuery(String query) {
+				Statement stmt = conn.createStatement()) {
+stmt.execute(query);
+			
+			
+		} catch (SQLException e) {
+			System.out.println(e.getMessage());
+			System.out.println("mURL= " + mUrl);
+			System.out.println("query= " + query);
+		}
+	}
+
+	public static ResultSet runSelectQuery(String query) {
 		ResultSet rs = null;
 		try (Connection conn = DriverManager.getConnection(mUrl);
 
@@ -98,7 +112,7 @@ public class ConvertTextToSQLLiteDB {
 
 	public static void fillContentsInDB() {
 		for (String s : mMasechtoth) {
-			String addMasecheth = "INSERT INTO Masechet (name) VALUES ('" + s + "');";
+			String addMasecheth = "INSERT  OR IGNORE INTO Masechet (name) VALUES ('" + s + "');";
 			runQuery(addMasecheth);
 		}
 	}
@@ -118,6 +132,7 @@ public class ConvertTextToSQLLiteDB {
 					if (firstLine) {
 						String parts[] = regel.split(" ");
 						currentMasechet = parts[parts.length - 3];
+						mMasechtoth.add(currentMasechet);
 						currentDaf = parts[parts.length - 2];
 						currentAmmud = parts[parts.length - 1];
 						firstLine = false;
@@ -145,8 +160,8 @@ public class ConvertTextToSQLLiteDB {
 					System.out.println("Daf: " + currentDaf);
 					System.out.println("Ammud: " + currentAmmud);
 					fillContentsInDB();
-					String getMasechetIdSQL = "SELECT Masechet.id from Masechet where Masechet.name='" + currentMasechet + "';";
-					ResultSet rs = runQuery(getMasechetIdSQL);
+					String getMasechetIdSQL = "SELECT id from Masechet where name='" + currentMasechet + "';";
+					ResultSet rs = runSelectQuery(getMasechetIdSQL);
 					int currentMasechetId=0;
 					while (rs.next()) {
 						currentMasechetId=rs.getInt("id");
