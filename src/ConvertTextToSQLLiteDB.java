@@ -94,20 +94,23 @@ stmt.execute(query);
 		}
 	}
 
-	public static ResultSet runSelectQuery(String query) {
-		ResultSet rs = null;
+	public static int runSelectQuery(String query) {
+		int id=0;
 		try (Connection conn = DriverManager.getConnection(mUrl);
 
 				Statement stmt = conn.createStatement()) {
 
-			rs = stmt.executeQuery(query);
+			ResultSet rs = stmt.executeQuery(query);
+			while (rs.next()){
+				id=rs.getInt("id");
+			}
 
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
 			System.out.println("mURL= " + mUrl);
 			System.out.println("query= " + query);
 		}
-		return rs;
+		return id;
 	}
 
 	public static void fillContentsInDB() {
@@ -161,11 +164,9 @@ stmt.execute(query);
 					System.out.println("Ammud: " + currentAmmud);
 					fillContentsInDB();
 					String getMasechetIdSQL = "SELECT id from Masechet where name='" + currentMasechet + "';";
-					ResultSet rs = runSelectQuery(getMasechetIdSQL);
+					
 					int currentMasechetId=0;
-					while (rs.next()) {
-						currentMasechetId=rs.getInt("id");
-					}
+					currentMasechetId = runSelectQuery(getMasechetIdSQL);
 					System.out.println(currentMasechetId);
 					String addAmmud = "INSERT INTO Daf (masechetId, dafNumber, side,text) VALUES " + "('"
 							+ currentMasechetId + "," + currentDaf + "," + currentAmmud + "," + content + "');";
@@ -173,7 +174,7 @@ stmt.execute(query);
 				}
 			}
 
-		} catch (IOException|SQLException e) {
+		} catch (IOException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		} 
