@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-
+//TODO: clean the code, seems to work, but try to merge rows where masechet & daf & ammud are the same into one row.
 //references:
 //http://www.sqlitetutorial.net/sqlite-java/create-database/
 //http://www.sqlitetutorial.net/sqlite-java/
@@ -79,14 +79,13 @@ public class ConvertTextToSQLLiteDB {
 			System.out.println(e.getMessage());
 		}
 	}
-	
-	public static void runQuery(String query){
+
+	public static void runQuery(String query) {
 		try (Connection conn = DriverManager.getConnection(mUrl);
 
 				Statement stmt = conn.createStatement()) {
-stmt.execute(query);
-			
-			
+			stmt.execute(query);
+
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
 			System.out.println("mURL= " + mUrl);
@@ -94,15 +93,33 @@ stmt.execute(query);
 		}
 	}
 
+	public static void insertAmmud(int currentMasechetId, String currentDaf, String currentAmmud, String content) {
+		String sql = "INSERT INTO Daf (masechetId, dafNumber, side,text) VALUES(?,?,?,?)";
+
+		try (Connection conn = DriverManager.getConnection(mUrl)) {
+
+			Statement stmt = conn.createStatement();
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+
+			pstmt.setInt(1, currentMasechetId);
+			pstmt.setString(2, currentDaf);
+			pstmt.setString(3, currentAmmud);
+			pstmt.setString(4, content);
+			pstmt.executeUpdate();
+		} catch (SQLException e) {
+			System.out.println(e.getMessage());
+		}
+	}
+
 	public static int runSelectQuery(String query) {
-		int id=0;
+		int id = 0;
 		try (Connection conn = DriverManager.getConnection(mUrl);
 
 				Statement stmt = conn.createStatement()) {
 
 			ResultSet rs = stmt.executeQuery(query);
-			while (rs.next()){
-				id=rs.getInt("id");
+			while (rs.next()) {
+				id = rs.getInt("id");
 			}
 
 		} catch (SQLException e) {
@@ -164,20 +181,17 @@ stmt.execute(query);
 					System.out.println("Ammud: " + currentAmmud);
 					fillContentsInDB();
 					String getMasechetIdSQL = "SELECT id from Masechet where name='" + currentMasechet + "';";
-					
-					int currentMasechetId=0;
+					int currentMasechetId = 0;
 					currentMasechetId = runSelectQuery(getMasechetIdSQL);
 					System.out.println(currentMasechetId);
-					String addAmmud = "INSERT INTO Daf (masechetId, dafNumber, side,text) VALUES " + "('"
-							+ currentMasechetId + "," + currentDaf + "," + currentAmmud + "," + content + "');";
-					// runQuery(addAmmud);
+					insertAmmud(currentMasechetId, currentDaf, currentAmmud, content);
 				}
 			}
 
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
-		} 
+		}
 	}
 
 	private static void deleteFile(String file) {
@@ -194,12 +208,16 @@ stmt.execute(query);
 	 *            the command line arguments
 	 */
 	public static void main(String[] args) {
+		//delete existing SQLite DB file
+		// deleteFile(DBFILENAME);
+		//create database
 		createNewDatabase(DBFILENAME);
+		//create tables
 		runQuery(SQLTABLEMASECHET);
 		runQuery(SQLTABLEDAF);
 		getMasechtothFromExternalFile("Export.txt");
+
 		
-		//deleteFile(DBFILENAME);
 	}
 
 }
