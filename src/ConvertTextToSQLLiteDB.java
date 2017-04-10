@@ -107,7 +107,7 @@ public class ConvertTextToSQLLiteDB {
 	
 	private static void copyFromTableDaf1TotableDaf2(String tableDaf1, String tableDaf2) {
 		runQuery("INSERT INTO "+tableDaf2+" SELECT masechetId, dafNumber, side, text FROM "
-		+ tableDaf1+" group by id, masechetId, dafNumber, side;");	
+		+ tableDaf1+" group by masechetId, dafNumber, side;");	
 	}
 
 	public static void insertAmmud(String table,int currentMasechetId, String currentDaf, String currentAmmud, String content) {
