@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 //TODO: clean the code, seems to work, but try to merge rows where masechet & daf & ammud are the same into one row.
+//start with this sql for merging purposes, may be it should be inserted into a new table with new generated id's:
+//select id, masechetId, dafNumber, side, text from Daf 
+//group by id, masechetId, dafNumber, side;
 //references:
 //http://www.sqlitetutorial.net/sqlite-java/create-database/
 //http://www.sqlitetutorial.net/sqlite-java/
@@ -47,7 +50,12 @@ public class ConvertTextToSQLLiteDB {
 	private static final String SQLTABLEMASECHET = "CREATE TABLE IF NOT EXISTS Masechet ("
 			+ "	id integer PRIMARY KEY AUTOINCREMENT UNIQUE," + "	name text NOT NULL UNIQUE" + ");";
 
-	private static final String SQLTABLEDAF = "CREATE TABLE IF NOT EXISTS Daf("
+	private static final String SQLTABLEDAFtmp = "CREATE TABLE IF NOT EXISTS Daftmp("
+			+ "	id integer PRIMARY KEY AUTOINCREMENT UNIQUE," + "	masechetId INTEGER NOT NULL,"
+			+ " dafNumber INTEGER NOT NULL," + " side INTEGER NOT NULL," + " text TEXT NOT NULL,"
+			+ " FOREIGN KEY(masechetId) REFERENCES Masechet(id)" + ");";
+	
+	private static final String SQLTABLEDAF2 = "CREATE TABLE IF NOT EXISTS Daf2("
 			+ "	id integer PRIMARY KEY AUTOINCREMENT UNIQUE," + "	masechetId INTEGER NOT NULL,"
 			+ " dafNumber INTEGER NOT NULL," + " side INTEGER NOT NULL," + " text TEXT NOT NULL,"
 			+ " FOREIGN KEY(masechetId) REFERENCES Masechet(id)" + ");";
@@ -92,9 +100,18 @@ public class ConvertTextToSQLLiteDB {
 			System.out.println("query= " + query);
 		}
 	}
+	
+	private static void runDeleteTableQuery(String tableName) {
+		runQuery("DROP TABLE IF EXISTS "+ tableName);
+	}
+	
+	private static void copyFromTableDaf1TotableDaf2(String tableDaf1, String tableDaf2) {
+		runQuery("INSERT INTO "+tableDaf2+" SELECT masechetId, dafNumber, side, text FROM "
+		+ tableDaf1+" group by id, masechetId, dafNumber, side;");	
+	}
 
-	public static void insertAmmud(int currentMasechetId, String currentDaf, String currentAmmud, String content) {
-		String sql = "INSERT INTO Daf (masechetId, dafNumber, side,text) VALUES(?,?,?,?)";
+	public static void insertAmmud(String table,int currentMasechetId, String currentDaf, String currentAmmud, String content) {
+		String sql = "INSERT INTO "+table+" (masechetId, dafNumber, side,text) VALUES(?,?,?,?)";
 
 		try (Connection conn = DriverManager.getConnection(mUrl)) {
 
@@ -184,7 +201,7 @@ public class ConvertTextToSQLLiteDB {
 					int currentMasechetId = 0;
 					currentMasechetId = runSelectQuery(getMasechetIdSQL);
 					System.out.println(currentMasechetId);
-					insertAmmud(currentMasechetId, currentDaf, currentAmmud, content);
+					insertAmmud("Daftmp",currentMasechetId, currentDaf, currentAmmud, content);
 				}
 			}
 
@@ -214,10 +231,19 @@ public class ConvertTextToSQLLiteDB {
 		createNewDatabase(DBFILENAME);
 		//create tables
 		runQuery(SQLTABLEMASECHET);
-		runQuery(SQLTABLEDAF);
+		runQuery(SQLTABLEDAFtmp);
+		runQuery(SQLTABLEDAF2);
+		
 		getMasechtothFromExternalFile("Export.txt");
+		
+		copyFromTableDaf1TotableDaf2("Daftmp","Daf2");
+		runDeleteTableQuery("Daftmp");
 
 		
 	}
+
+	
+
+	
 
 }
