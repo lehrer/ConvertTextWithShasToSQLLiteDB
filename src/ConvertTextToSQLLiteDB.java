@@ -98,6 +98,7 @@ public class ConvertTextToSQLLiteDB {
 			System.out.println(e.getMessage());
 			System.out.println("mURL= " + mUrl);
 			System.out.println("query= " + query);
+			
 		}
 	}
 	
